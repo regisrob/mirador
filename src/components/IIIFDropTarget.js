@@ -7,6 +7,7 @@ import { v4 as uuid } from 'uuid';
 import { NativeTypes } from 'react-dnd-html5-backend';
 import { useDrop } from 'react-dnd';
 import { readImageMetadata } from '../lib/readImageMetadata';
+import { decode } from 'base64url';
 
 /** */
 export const handleDrop = (item, monitor, props) => {
@@ -15,10 +16,31 @@ export const handleDrop = (item, monitor, props) => {
   if (item.urls) {
     item.urls.forEach((str) => {
       const url = new URL(str);
-      const manifestId = url.searchParams.get('manifest');
-      const canvasId = url.searchParams.get('canvas');
+      let manifestId = url.searchParams.get('manifest') || url.searchParams.get('iiif-content');
+      let canvasId = url.searchParams.get('canvas');
 
-      if (manifestId) onDrop({ canvasId, manifestId }, props, monitor);
+      // manifestId is not a url nor a json object
+      if (manifestId && !manifestId.startsWith('http') && !manifestId.startsWith('{')) {
+        let contentState = JSON.parse(decode(manifestId));
+        let motivation = contentState.motivation || [];
+
+        if (!Array.isArray(motivation)) motivation = [motivation];
+        if (motivation.includes('contentState')) {
+          if (contentState.target.type === 'Canvas') {
+            canvasId = contentState.target.id;
+          } else if (contentState.target.type === 'Manifest') {
+            manifestId = contentState.target.id;
+          }
+          let partOf = contentState.target.partOf || [];
+          if (partOf.length > 0) {
+            partOf = partOf[0];
+            if (partOf.type === 'Manifest') manifestId = partOf.id;
+          }
+          onDrop({ canvasId, manifestId }, props, monitor)
+        }
+      } else if (manifestId) {
+        onDrop({ canvasId, manifestId }, props, monitor);
+      }
     });
   }
 

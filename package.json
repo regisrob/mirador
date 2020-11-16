@@ -35,6 +35,7 @@
     "@material-ui/icons": "^4.9.1",
     "@material-ui/lab": "^4.0.0-alpha.53",
     "@researchgate/react-intersection-observer": "^1.0.0",
+    "base64url": "^3.0.1",
     "classnames": "^2.2.6",
     "clsx": "^1.0.4",
     "deepmerge": "^4.2.2",
